@@ -1,20 +1,24 @@
+<h1 align="center">autodev</h1>
+
 <p align="center">
-  <h1 align="center">autodev</h1>
-  <p align="center">
-    Autonomous app development experiments, inspired by <a href="https://github.com/karpathy/autoresearch">autoresearch</a>
-  </p>
-  <p align="center">
-    <a href="#quick-start">Quick Start</a> · <a href="#how-it-works">How It Works</a> · <a href="#configuration">Configuration</a> · <a href="#cli-reference">CLI Reference</a>
-  </p>
+  <strong>Autonomous app development experiments</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/mrlfarano/autodev/actions/workflows/ci.yml"><img src="https://github.com/mrlfarano/autodev/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/mrlfarano/autodev/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D18.17-brightgreen.svg" alt="Node.js"></a>
+</p>
+
+<p align="center">
+  Give an AI agent your app, a scoring harness, and a loop — wake up to a better codebase.
 </p>
 
 ---
 
-Give an AI agent your app, a scoring harness, and a loop — wake up to a better codebase.
+Inspired by Andrej Karpathy's [autoresearch](https://github.com/karpathy/autoresearch): instead of training a neural net and reading `val_bpb`, you modify application code and read a composite quality score. Same idea, different domain.
 
-**autodev** runs an AI coding agent in a continuous improvement loop against your project. Each iteration, the agent makes a change, commits it, and calls `autodev-score` to evaluate it. If the composite score improves, the change is kept. If not, it's reverted. The agent loops indefinitely — 12 experiments per hour, ~100 overnight while you sleep.
-
-Instead of training a neural net and reading `val_bpb`, you modify application code and read a composite quality score. Same idea, different domain.
+**autodev** provides two CLI tools — `autodev-score` (a layered evaluation harness) and `autodev-report` (a self-contained HTML report generator) — that an AI coding agent calls in a continuous improvement loop. Each iteration, the agent makes a change, commits it, scores it, and keeps or reverts it. The agent loops indefinitely — ~12 experiments per hour, ~100 overnight.
 
 ## How It Works
 
@@ -59,7 +63,7 @@ Instead of training a neural net and reading `val_bpb`, you modify application c
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Three experiment types** — the agent autonomously picks what to work on:
+The agent autonomously picks what to work on across three experiment types:
 
 | Type | Examples |
 |------|---------|
@@ -67,76 +71,30 @@ Instead of training a neural net and reading `val_bpb`, you modify application c
 | **Feature** | New pages, API endpoints, components, integrations |
 | **UI/UX** | Design polish, animations, responsive layout, dark mode |
 
-## Quick Start
+## Installation
+
+**Requirements:** Node.js 18.17+
 
 ```bash
-# 1. Clone and install
 git clone https://github.com/mrlfarano/autodev.git
 cd autodev
 npm install
-npm link
-
-# 2. Configure
-cp autodev.yaml.example autodev.yaml
-# Edit autodev.yaml — set `target` to your project path
-
-# 3. Set the config path
-export AUTODEV_CONFIG=$(pwd)/autodev.yaml
-
-# 4. Launch an agent in your project
-cd ~/your-project
-claude   # or codex, cursor, etc.
+npm link    # makes autodev-score and autodev-report available globally
 ```
 
-Then prompt the agent:
+## Usage
 
-> Read ~/path/to/autodev/program.md and let's kick off a new experiment!
+### 1. Configure
 
-The agent takes it from there — creating a branch, establishing a baseline, and looping through experiments autonomously.
+```bash
+cp autodev.yaml.example autodev.yaml
+```
 
-## Scoring Pipeline
-
-The scoring is **layered** — cheap checks first, expensive checks only if the cheap ones pass:
-
-| Step | What | Cost | Failure = |
-|------|------|------|-----------|
-| **Hard Gate** | `build && test && lint` | Free | CRASH (skip everything else) |
-| **Metrics** | Bundle size, test coverage, type errors | Free | Score penalty |
-| **LLM Judge** | Correctness, quality, impact, risk (0-10 each) | Free (local) or ~$0.02 (cloud) | Low score |
-| **Composite** | Weighted average of above | — | KEEP or DISCARD |
-
-The agent can use `--gate-only` for quick sanity checks during coding, and `--no-judge` to skip the LLM call for faster iterations. The full pipeline only runs at the final evaluation.
-
-### Judge Inference
-
-The judge is configurable per experiment size:
-
-| Size | Default | Rationale |
-|------|---------|-----------|
-| `small` | Local (Ollama) | Quick refactors don't need deep review |
-| `medium` | Local (Ollama) | Component changes are straightforward |
-| `large` | Cloud (Anthropic) | New features warrant thorough assessment |
-
-Override per-run with `--judge local` or `--judge cloud`.
-
-## Configuration
-
-All config lives in `autodev.yaml`:
+Edit `autodev.yaml` — at minimum, set `target` to your project path:
 
 ```yaml
-# What project to target
 target: ~/dev/my-app
 
-# Framework template (auto-detected if omitted)
-template: nextjs
-
-# Time budgets per experiment size (minutes)
-budgets:
-  small: 5
-  medium: 15
-  large: 30
-
-# Scoring
 scoring:
   hard_gate:
     - npm run build
@@ -147,7 +105,7 @@ scoring:
     bundle_size: 0.10
     test_coverage: 0.20
     type_errors: 0.10
-    judge_score: 0.60       # weights must sum to 1.0
+    judge_score: 0.60
 
   judge:
     default:
@@ -164,22 +122,63 @@ scoring:
       max_tokens: 1024
 ```
 
-## CLI Reference
+See [Configuration](#configuration) for all options.
 
-### `autodev-score`
-
-The evaluation harness. The agent calls this after each experiment.
+### 2. Set the config path
 
 ```bash
-autodev-score                        # full pipeline
-autodev-score --gate-only            # quick build/test/lint check
-autodev-score --no-judge             # skip LLM judge
-autodev-score --size large           # use cloud judge (per config)
-autodev-score --judge cloud          # force cloud judge
-autodev-score --config ./my.yaml     # custom config path
+export AUTODEV_CONFIG=$(pwd)/autodev.yaml
 ```
 
-Output is grep-friendly:
+### 3. Launch an agent in your project
+
+```bash
+cd ~/dev/my-app
+claude    # or codex, cursor, etc.
+```
+
+Then prompt:
+
+> Read ~/path/to/autodev/program.md and let's kick off a new experiment!
+
+The agent reads `program.md`, creates a branch, establishes a baseline score, and starts looping through experiments autonomously.
+
+### 4. Review results
+
+After the agent has been running (minutes, hours, overnight):
+
+```bash
+autodev-report    # generates autodev-report.html in your project
+```
+
+Open the HTML file to see score progression, top improvements, category breakdown, and near-misses.
+
+### Scoring pipeline
+
+Scoring is **layered** — cheap checks first, expensive checks only when the cheap ones pass:
+
+| Step | What | Cost | On failure |
+|------|------|------|------------|
+| **Hard Gate** | `build && test && lint` | Free | CRASH (skip everything) |
+| **Metrics** | Bundle size, coverage, type errors | Free | Score penalty |
+| **LLM Judge** | Correctness, quality, impact, risk | Free (local) or ~$0.02 (cloud) | Low score |
+| **Composite** | Weighted average | — | KEEP or DISCARD |
+
+### Judge inference
+
+The LLM judge provider is configurable per experiment size:
+
+| Size | Default | Rationale |
+|------|---------|-----------|
+| `small` | Local (Ollama) | Quick refactors don't need deep review |
+| `medium` | Local (Ollama) | Component changes are straightforward |
+| `large` | Cloud (Anthropic) | New features warrant thorough assessment |
+
+Override per-run: `autodev-score --judge cloud` or `--judge local`.
+
+### Example output
+
+`autodev-score` produces grep-friendly output:
 
 ```
 ---
@@ -195,66 +194,98 @@ verdict:          KEEP
 ---
 ```
 
-### `autodev-report`
+## Configuration
 
-Generates a self-contained HTML report from `results.tsv`. Double-click to open — no server needed.
+All configuration lives in a single `autodev.yaml` file.
 
-```bash
-autodev-report                       # HTML report (default)
-autodev-report --format md           # Markdown report
-autodev-report --since 2026-03-15    # Filter by date
-autodev-report --output ./report.html
-```
+| Field | Default | Description |
+|-------|---------|-------------|
+| `target` | *(required)* | Absolute or `~`-expanded path to the target project |
+| `template` | auto-detected | `nextjs`, `generic`, or path to a custom `.md` template |
+| `budgets.small` | `5` | Time budget (minutes) for small experiments |
+| `budgets.medium` | `15` | Time budget for medium experiments |
+| `budgets.large` | `30` | Time budget for large experiments |
+| `branch_prefix` | `autodev` | Git branch prefix for experiment runs |
+| `scoring.hard_gate` | *(required)* | Shell commands that must all exit 0 |
+| `scoring.weights` | *(required)* | Metric weights (must sum to 1.0) |
+| `scoring.judge.default` | — | Judge provider per size: `local` or `cloud` |
+| `scoring.judge.local` | — | Ollama endpoint, model, and timeout |
+| `scoring.judge.cloud` | — | Anthropic provider, model, and max_tokens |
 
-The report includes: score progression chart, category breakdown, top improvements, near-misses, and crash log.
+### Templates
 
-## Templates
-
-Templates provide framework-specific scoring defaults and agent context.
+Templates provide framework-specific scoring defaults and agent context. `autodev.yaml` settings always override template defaults.
 
 | Template | Auto-detected by | Description |
 |----------|-----------------|-------------|
-| `nextjs` | `next.config.ts` | Next.js App Router, shadcn/ui, Tailwind, Vitest + Playwright |
+| `nextjs` | `next.config.ts` / `.js` | Next.js App Router, shadcn/ui, Tailwind, Vitest + Playwright |
 | `generic` | fallback | No defaults — you must configure `scoring.hard_gate` in YAML |
 
-Custom templates: set `template: ./path/to/my-template.md` in your config.
+Custom templates: `template: ./path/to/my-template.md`
 
-`autodev.yaml` settings always override template defaults.
+### CLI reference
 
-## Project Structure
+**`autodev-score`** — the evaluation harness
 
-```
-autodev/
-├── bin/
-│   ├── score.js            ← autodev-score CLI
-│   └── report.js           ← autodev-report CLI
-├── lib/                    ← scoring pipeline modules
-│   ├── config.js           ← YAML config loader
-│   ├── hard-gate.js        ← build/test/lint runner
-│   ├── metrics.js          ← bundle, coverage, type errors
-│   ├── judge.js            ← Ollama + Anthropic callers
-│   ├── judge-prompt.js     ← rubric + response parsing
-│   ├── composite.js        ← weighted score + verdict
-│   ├── baseline.js         ← .autodev-baseline.json
-│   ├── results.js          ← results.tsv reader
-│   └── template.js         ← framework detection
-├── reporting/              ← report generation
-│   ├── generate.js         ← data from TSV
-│   ├── render-html.js      ← HTML output
-│   ├── render-md.js        ← Markdown output
-│   └── template.html       ← self-contained dark-themed HTML
-├── templates/
-│   ├── nextjs.md
-│   └── generic.md
-├── program.md              ← agent instructions
-├── autodev.yaml.example    ← example config
-└── package.json
+```bash
+autodev-score                        # full pipeline
+autodev-score --gate-only            # quick build/test/lint check
+autodev-score --no-judge             # skip LLM judge
+autodev-score --size large           # declare experiment size
+autodev-score --judge cloud          # force cloud judge
+autodev-score --config ./path.yaml   # custom config path
 ```
 
-## Inspiration
+**`autodev-report`** — post-run reporting
 
-This project adapts the core loop from Andrej Karpathy's [autoresearch](https://github.com/karpathy/autoresearch) — autonomous LLM training experiments with a fixed evaluation harness — to general application development. The key insight is the same: give an AI agent a metric to optimize, a codebase to modify, and a keep/discard mechanism, then let it run.
+```bash
+autodev-report                       # HTML report (default)
+autodev-report --format md           # markdown report
+autodev-report --since 2026-03-15    # filter by date
+autodev-report --output ./report.html
+```
+
+## Support
+
+Open an [issue](https://github.com/mrlfarano/autodev/issues) for bugs or feature requests.
+
+## Roadmap
+
+- [ ] Additional framework templates (Vite, Python, Rust)
+- [ ] `autodev-report` interactive HTML charts with Chart.js
+- [ ] Parallel experiment support (multiple agents, separate branches)
+- [ ] `npx autodev-score` without cloning the repo
+- [ ] Screenshot-based UI scoring via vision models
+
+## Contributing
+
+Contributions are welcome.
+
+```bash
+# Clone and install
+git clone https://github.com/mrlfarano/autodev.git
+cd autodev
+npm install
+
+# Run tests
+npm test
+
+# Run a specific test file
+node --test tests/config.test.js
+```
+
+The project uses Node.js built-in test runner (`node:test`) with zero dev dependencies. All scoring logic lives in `lib/`, CLI entrypoints in `bin/`, report generation in `reporting/`. Tests mirror `lib/` 1:1 in `tests/`.
+
+## Authors
+
+Built by [@mrlfarano](https://github.com/mrlfarano).
+
+The core idea — autonomous experiments with a fixed evaluation harness — comes from Andrej Karpathy's [autoresearch](https://github.com/karpathy/autoresearch).
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+## Project status
+
+Active development. This is v0.1 — the scoring pipeline and reporting work end-to-end, but the system has only been tested against Next.js projects so far. Feedback and additional framework templates are welcome.
