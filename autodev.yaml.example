@@ -1,0 +1,56 @@
+# Target project (absolute or ~ path)
+target: ~/dev/personal/myollama
+
+# Framework template: "nextjs", "generic", or path to custom template
+# Auto-detected from target project if omitted
+# template: nextjs
+
+# Time budgets (minutes) per experiment size
+budgets:
+  small: 5
+  medium: 15
+  large: 30
+
+# Git branch prefix
+branch_prefix: autodev
+
+# Scoring configuration
+scoring:
+  # Hard gate commands (ALL must exit 0)
+  hard_gate:
+    - npm run build
+    - npm run test
+    - npm run lint
+
+  # Automated metrics to collect
+  metrics:
+    bundle_size: true
+    test_coverage: true
+    type_errors: true
+
+  # Composite score weights (must sum to 1.0)
+  weights:
+    bundle_size: 0.10
+    test_coverage: 0.20
+    type_errors: 0.10
+    judge_score: 0.60
+
+  # LLM-as-judge
+  judge:
+    # Default provider per experiment size: "local" or "cloud"
+    default:
+      small: local
+      medium: local
+      large: cloud
+
+    # Local inference (Ollama)
+    local:
+      endpoint: http://localhost:11434
+      model: qwen3:4b
+      timeout: 60
+
+    # Cloud inference (Anthropic)
+    cloud:
+      provider: anthropic
+      model: claude-sonnet-4-6
+      max_tokens: 1024
