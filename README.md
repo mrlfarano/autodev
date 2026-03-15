@@ -32,7 +32,7 @@ Each experiment is a git commit. If the composite score improves over the baseli
 ## Quick start
 
 ```bash
-git clone <repo>
+git clone https://github.com/mrlfarano/autodev.git
 cd autodev
 npm install
 npm link                          # makes autodev-score available globally

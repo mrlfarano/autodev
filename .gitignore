@@ -1,1 +1,11 @@
 node_modules/
+
+# User config (contains local paths)
+autodev.yaml
+
+# Runtime artifacts (generated in target project)
+results.tsv
+run.log
+autodev-report.html
+autodev-report.md
+.autodev-baseline.json

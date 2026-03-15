@@ -3,6 +3,21 @@
   "version": "0.1.0",
   "description": "Autonomous app development experiments, inspired by autoresearch",
   "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mrlfarano/autodev.git"
+  },
+  "homepage": "https://github.com/mrlfarano/autodev",
+  "keywords": [
+    "ai",
+    "autonomous",
+    "development",
+    "autoresearch",
+    "llm",
+    "scoring",
+    "experiments"
+  ],
   "bin": {
     "autodev-score": "./bin/score.js",
     "autodev-report": "./bin/report.js"
