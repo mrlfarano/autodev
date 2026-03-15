@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autodev Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --gray: #484f58;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Summary cards */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-card .value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .stat-card .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+  }
+
+  .stat-card .value.green { color: var(--green); }
+  .stat-card .value.red { color: var(--red); }
+  .stat-card .value.orange { color: var(--orange); }
+  .stat-card .value.accent { color: var(--accent); }
+
+  /* Chart */
+  .chart-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .chart-container svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .chart-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: rgba(88, 166, 255, 0.04);
+  }
+
+  .mono {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.8rem;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15em 0.5em;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .badge-green { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+  .badge-red { background: rgba(248, 81, 73, 0.15); color: var(--red); }
+  .badge-gray { background: rgba(72, 79, 88, 0.25); color: var(--text-muted); }
+  .badge-orange { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+
+  /* Lists */
+  .item-list {
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .item-list li {
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+  }
+
+  .item-list li:last-child {
+    border-bottom: none;
+  }
+
+  .empty-state {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.875rem;
+    padding: 1rem 0;
+  }
+
+  .plus { color: var(--green); }
+  .minus { color: var(--red); }
+</style>
+</head>
+<body>
+
+<h1>Autodev Report</h1>
+<p class="subtitle" id="subtitle">Loading...</p>
+
+<div class="summary-grid" id="summary-grid"></div>
+
+<h2>Score Progression</h2>
+<div class="chart-container">
+  <div id="chart"></div>
+  <div class="chart-legend">
+    <span><span class="legend-dot" style="background:var(--green)"></span> Kept</span>
+    <span><span class="legend-dot" style="background:var(--gray)"></span> Discarded</span>
+    <span><span class="legend-dot" style="background:var(--red)"></span> Crashed</span>
+  </div>
+</div>
+
+<h2>Top Improvements</h2>
+<div id="top-improvements"></div>
+
+<h2>Category Breakdown</h2>
+<div id="category-breakdown"></div>
+
+<h2>Near Misses</h2>
+<div id="near-misses"></div>
+
+<h2>Crash Log</h2>
+<div id="crash-log"></div>
+
+<script>
+window.__AUTODEV_DATA__ = {{DATA}};
+
+(function() {
+  const data = window.__AUTODEV_DATA__;
+  const { summary, rows, topImprovements, categoryBreakdown, nearMisses, crashLog } = data;
+
+  // Subtitle
+  document.getElementById("subtitle").textContent =
+    `${summary.total} experiments \u2022 ${summary.baselineScore} \u2192 ${summary.finalScore} (+${summary.improvement})`;
+
+  // Summary cards
+  const cards = [
+    { label: "Total", value: summary.total, cls: "" },
+    { label: "Kept", value: summary.kept, cls: "green" },
+    { label: "Discarded", value: summary.discarded, cls: "orange" },
+    { label: "Crashed", value: summary.crashed, cls: "red" },
+    { label: "Keep Rate", value: summary.keepRate + "%", cls: "accent" },
+    { label: "Baseline", value: summary.baselineScore, cls: "" },
+    { label: "Final", value: summary.finalScore, cls: "green" },
+    { label: "Improvement", value: "+" + summary.improvement, cls: "green" },
+  ];
+
+  const grid = document.getElementById("summary-grid");
+  cards.forEach(c => {
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    card.innerHTML = `<div class="value ${c.cls}">${c.value}</div><div class="label">${c.label}</div>`;
+    grid.appendChild(card);
+  });
+
+  // Score progression chart (inline SVG)
+  buildChart(rows);
+
+  // Top improvements table
+  const tiContainer = document.getElementById("top-improvements");
+  if (topImprovements.length === 0) {
+    tiContainer.innerHTML = '<p class="empty-state">No improvements recorded.</p>';
+  } else {
+    let html = '<table><thead><tr><th>#</th><th>Delta</th><th>Score</th><th>Category</th><th>Description</th></tr></thead><tbody>';
+    topImprovements.forEach((row, i) => {
+      html += `<tr>
+        <td>${i + 1}</td>
+        <td class="mono plus">+${row.delta}</td>
+        <td class="mono">${row.composite}</td>
+        <td><span class="badge badge-green">${esc(row.category)}</span></td>
+        <td>${esc(row.description)}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    tiContainer.innerHTML = html;
+  }
+
+  // Category breakdown table
+  const cbContainer = document.getElementById("category-breakdown");
+  if (categoryBreakdown.length === 0) {
+    cbContainer.innerHTML = '<p class="empty-state">No category data.</p>';
+  } else {
+    let html = '<table><thead><tr><th>Category</th><th>Tried</th><th>Kept</th><th>Keep Rate</th><th>Avg Judge</th></tr></thead><tbody>';
+    categoryBreakdown.forEach(cat => {
+      html += `<tr>
+        <td>${esc(cat.name)}</td>
+        <td class="mono">${cat.tried}</td>
+        <td class="mono">${cat.kept}</td>
+        <td class="mono">${cat.keepRate}%</td>
+        <td class="mono">${cat.avgJudge}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    cbContainer.innerHTML = html;
+  }
+
+  // Near misses
+  const nmContainer = document.getElementById("near-misses");
+  if (nearMisses.length === 0) {
+    nmContainer.innerHTML = '<p class="empty-state">No near misses.</p>';
+  } else {
+    let html = '<ul class="item-list">';
+    nearMisses.forEach(row => {
+      html += `<li><strong>${esc(row.description)}</strong> <span class="mono" style="color:var(--text-muted)">(judge: ${row.judge}, composite: ${row.composite})</span></li>`;
+    });
+    html += '</ul>';
+    nmContainer.innerHTML = html;
+  }
+
+  // Crash log
+  const clContainer = document.getElementById("crash-log");
+  if (crashLog.length === 0) {
+    clContainer.innerHTML = '<p class="empty-state">No crashes. Nice.</p>';
+  } else {
+    let html = '<ul class="item-list">';
+    crashLog.forEach(row => {
+      html += `<li><span class="badge badge-red">CRASH</span> ${esc(row.description)} <span class="mono" style="color:var(--text-muted)">${esc(row.commit || "")}</span></li>`;
+    });
+    html += '</ul>';
+    clContainer.innerHTML = html;
+  }
+
+  function esc(s) {
+    const d = document.createElement("div");
+    d.textContent = s || "";
+    return d.innerHTML;
+  }
+
+  function buildChart(rows) {
+    if (rows.length === 0) {
+      document.getElementById("chart").innerHTML = '<p class="empty-state">No data to chart.</p>';
+      return;
+    }
+
+    const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+    const width = 800;
+    const height = 260;
+    const innerW = width - padding.left - padding.right;
+    const innerH = height - padding.top - padding.bottom;
+
+    const scores = rows.map(r => r.composite);
+    const minScore = Math.max(0, Math.floor(Math.min(...scores) - 5));
+    const maxScore = Math.ceil(Math.max(...scores) + 5);
+    const range = maxScore - minScore || 1;
+
+    function x(i) {
+      return padding.left + (rows.length === 1 ? innerW / 2 : (i / (rows.length - 1)) * innerW);
+    }
+    function y(val) {
+      return padding.top + innerH - ((val - minScore) / range) * innerH;
+    }
+
+    let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Grid lines
+    const gridSteps = 5;
+    for (let i = 0; i <= gridSteps; i++) {
+      const val = minScore + (range / gridSteps) * i;
+      const yPos = y(val);
+      svg += `<line x1="${padding.left}" y1="${yPos}" x2="${width - padding.right}" y2="${yPos}" stroke="#30363d" stroke-width="1" stroke-dasharray="4,4"/>`;
+      svg += `<text x="${padding.left - 8}" y="${yPos + 4}" text-anchor="end" fill="#8b949e" font-size="11" font-family="monospace">${val.toFixed(0)}</text>`;
+    }
+
+    // X-axis labels
+    svg += `<text x="${width / 2}" y="${height - 4}" text-anchor="middle" fill="#8b949e" font-size="11">Experiment Index</text>`;
+
+    // Connecting line for kept experiments
+    const keptIndices = [];
+    rows.forEach((row, i) => {
+      if (row.status === "keep") keptIndices.push(i);
+    });
+
+    if (keptIndices.length > 1) {
+      let pathD = "";
+      keptIndices.forEach((idx, j) => {
+        const cmd = j === 0 ? "M" : "L";
+        pathD += `${cmd}${x(idx).toFixed(1)},${y(rows[idx].composite).toFixed(1)} `;
+      });
+      svg += `<path d="${pathD}" fill="none" stroke="#3fb950" stroke-width="2" stroke-opacity="0.5"/>`;
+    }
+
+    // Dots
+    rows.forEach((row, i) => {
+      let color = "#484f58"; // discarded
+      let r = 5;
+      if (row.status === "keep") { color = "#3fb950"; r = 6; }
+      else if (row.status === "crash") { color = "#f85149"; r = 6; }
+      svg += `<circle cx="${x(i).toFixed(1)}" cy="${y(row.composite).toFixed(1)}" r="${r}" fill="${color}" opacity="0.9">`;
+      svg += `<title>#${i} ${row.description || ""} (${row.composite})</title>`;
+      svg += `</circle>`;
+    });
+
+    svg += `</svg>`;
+    document.getElementById("chart").innerHTML = svg;
+  }
+})();
+</script>
+
+</body>
+</html>
