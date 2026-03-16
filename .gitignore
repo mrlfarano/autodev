@@ -9,3 +9,16 @@ run.log
 autodev-report.html
 autodev-report.md
 .autodev-baseline.json
+.autodev-work/
+.autodev-artifacts/
+.autodev-score-config.yaml
+
+# Web UI build artifacts
+web/.next/
+web/node_modules/
+web/node_modules_old/
+web/out/
+
+# OS files
+.DS_Store
+Thumbs.db

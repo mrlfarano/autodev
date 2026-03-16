@@ -20,10 +20,10 @@ metrics:
     parse: "First Load JS shared by all\\s+([\\d.]+)\\s*kB"
     direction: lower_is_better
   test_coverage:
-    command: "npx vitest run --coverage --reporter=json"
-    parse: "lines.pct"
+    command: "npx vitest run --coverage --reporter=json 2>&1"
+    parse: "\"pct\"\\s*:\\s*(\\d+\\.?\\d*)"
     direction: higher_is_better
   type_errors:
-    command: "npx tsc --noEmit 2>&1 | grep -c 'error TS' || true"
+    command: "npx tsc --noEmit 2>&1 | grep -c 'error TS' || echo 0"
     parse: stdout_as_number
     direction: lower_is_better

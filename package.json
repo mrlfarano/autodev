@@ -1,6 +1,6 @@
 {
   "name": "autodev",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Autonomous app development experiments, inspired by autoresearch",
   "type": "module",
   "license": "MIT",
@@ -19,6 +19,7 @@
     "experiments"
   ],
   "bin": {
+    "autodev": "./bin/cli.js",
     "autodev-score": "./bin/score.js",
     "autodev-report": "./bin/report.js"
   },
@@ -26,12 +27,15 @@
     "node": ">=18.17.0"
   },
   "scripts": {
+    "start": "node bin/cli.js",
     "test": "node run-tests.js",
     "test:watch": "node --test --watch tests/config.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
-    "js-yaml": "^4.1.0"
-  },
-  "devDependencies": {}
+    "gif-encoder-2": "^1.0.5",
+    "js-yaml": "^4.1.0",
+    "pngjs": "^7.0.0",
+    "puppeteer": "^24.39.1"
+  }
 }

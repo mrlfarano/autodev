@@ -67,11 +67,14 @@ async function main() {
 
   // On first run, save baseline metrics for future comparison
   if (isBaseline) {
-    writeBaseline(cwd, {
-      bundle_kb: metrics.bundle_kb ?? 0,
-      test_coverage: metrics.test_coverage ?? 0,
-      type_errors: metrics.type_errors ?? 0,
-    });
+    const baselineData = {};
+    // Save all raw metric values (keys without _score or _delta suffix)
+    for (const [key, value] of Object.entries(metrics)) {
+      if (!key.endsWith("_score") && !key.endsWith("_delta") && typeof value === "number") {
+        baselineData[key] = value;
+      }
+    }
+    writeBaseline(cwd, baselineData);
   }
 
   // Parse test result from gate output
@@ -93,6 +96,14 @@ async function main() {
     const size = args.size || "medium";
     const judgeConfig = resolveJudgeConfig(config.scoring, size, args.judge);
 
+    // Build delta object from all _delta keys
+    const deltas = {};
+    for (const [key, value] of Object.entries(metrics)) {
+      if (key.endsWith("_delta")) {
+        deltas[key] = value;
+      }
+    }
+
     if (isBaseline) {
       judgeResult = await runJudge(judgeConfig, "", metrics, { isBaseline: true });
     } else {
@@ -109,11 +120,7 @@ async function main() {
       } catch {
         diff = "(diff unavailable)";
       }
-      judgeResult = await runJudge(judgeConfig, diff, {
-        bundle_delta: metrics.bundle_delta,
-        coverage_delta: metrics.coverage_delta,
-        type_delta: metrics.type_delta,
-      });
+      judgeResult = await runJudge(judgeConfig, diff, deltas);
     }
   }
 
@@ -128,18 +135,22 @@ async function main() {
   console.log(`build_seconds:    ${gate.buildSeconds.toFixed(1)}`);
   console.log(`test_result:      ${testResult}`);
   console.log(`lint_result:      ${lintResult}`);
-  if (metrics.bundle_kb !== undefined) {
-    console.log(`bundle_kb:        ${metrics.bundle_kb}`);
-    console.log(`bundle_delta:     ${metrics.bundle_delta >= 0 ? "+" : ""}${metrics.bundle_delta}`);
+
+  // Print all raw metric values and their deltas
+  for (const [key, value] of Object.entries(metrics)) {
+    if (key.endsWith("_score") || key.endsWith("_delta")) continue;
+    // Skip legacy alias keys
+    if (key === "bundle_kb") continue;
+    const label = `${key}:`.padEnd(18);
+    console.log(`${label}${value}`);
+    const deltaKey = `${key}_delta`;
+    if (metrics[deltaKey] !== undefined) {
+      const deltaLabel = `${key}_delta:`.padEnd(18);
+      const delta = metrics[deltaKey];
+      console.log(`${deltaLabel}${delta >= 0 ? "+" : ""}${delta}`);
+    }
   }
-  if (metrics.test_coverage !== undefined) {
-    console.log(`test_coverage:    ${metrics.test_coverage}`);
-    console.log(`coverage_delta:   ${metrics.coverage_delta >= 0 ? "+" : ""}${metrics.coverage_delta}`);
-  }
-  if (metrics.type_errors !== undefined) {
-    console.log(`type_errors:      ${metrics.type_errors}`);
-    console.log(`type_delta:       ${metrics.type_delta >= 0 ? "+" : ""}${metrics.type_delta}`);
-  }
+
   console.log(`judge_score:      ${judgeResult.score.toFixed(1)}/10`);
   console.log(`judge_summary:    "${judgeResult.summary}"`);
   console.log(`composite_score:  ${composite}`);
